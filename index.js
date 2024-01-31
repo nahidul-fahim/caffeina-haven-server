@@ -34,12 +34,13 @@ async function run() {
 
         // get database and collection
         const allUsersCollection = client.db("caffeinaHaven").collection("allUsers");
+        const allMenusCollection = client.db("caffeinaHaven").collection("allMenus");
 
 
         // post new created user data to database
         app.post("/createNewUser", async (req, res) => {
             const newUserInfo = req.body;
-            const query = { email: newUserInfo?.email }
+            const query = { email: newUserInfo?.userEmail }
             const existingUser = await allUsersCollection.findOne(query);
             if (existingUser) {
                 return res.send({ message: "User already exists", insertedId: null })
@@ -48,6 +49,26 @@ async function run() {
                 const result = await allUsersCollection.insertOne(newUserInfo);
                 res.send(result);
             }
+        })
+
+
+
+        // post new item to database
+        app.post("/addNewItem", async (req, res) => {
+            const newItemInfo = req.body;
+            const result = await allMenusCollection.insertOne(newItemInfo);
+            res.send(result);
+        })
+
+
+
+        // get current user data
+        app.get("/currentUser/:id", async (req, res) => {
+            const email = req.params.id;
+            const query = { userEmail: email };
+            const result = await allUsersCollection.findOne(query);
+            console.log(result);
+            res.send(result);
         })
 
 
