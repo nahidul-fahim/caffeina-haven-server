@@ -62,6 +62,14 @@ async function run() {
 
 
 
+        // get all the menus
+        app.get("/allMenu", async (req, res) => {
+            const result = await allMenusCollection.find().sort({ _id: -1 }).toArray();
+            res.send(result);
+        })
+
+
+
         // get current user data
         app.get("/currentUser/:id", async (req, res) => {
             const email = req.params.id;
