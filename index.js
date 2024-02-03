@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 // Middleware
@@ -62,9 +62,25 @@ async function run() {
 
 
 
+        // get all the users
+        app.get("/allUsers", async (req, res) => {
+            const userType = "user";
+            const query = { userType };
+            const result = await allUsersCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
+
         // get all the menus
         app.get("/allMenu", async (req, res) => {
-            const result = await allMenusCollection.find().sort({ _id: -1 }).toArray();
+            const category = req.query.category;
+            // get filtered list
+            let query = {};
+            if (category !== "all") {
+                query.itemCategory = { $regex: category, $options: 'i' }
+            }
+            const result = await allMenusCollection.find(query).sort({ _id: -1 }).toArray();
             res.send(result);
         })
 
@@ -75,7 +91,23 @@ async function run() {
             const email = req.params.id;
             const query = { userEmail: email };
             const result = await allUsersCollection.findOne(query);
-            console.log(result);
+            res.send(result);
+        })
+
+
+
+        // update user status
+        app.put("/updateUser/:id", async (req, res) => {
+            const userId = req.params.id;
+            const filter = { _id: new ObjectId(userId) };
+            const options = { upsert: true };
+            const updatedInfo = req.body;
+            const updateDoc = {
+                $set: {
+                    userStatus: updatedInfo?.userStatus
+                }
+            }
+            const result = await allUsersCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
 
