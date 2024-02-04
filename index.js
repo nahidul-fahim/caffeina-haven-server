@@ -75,10 +75,14 @@ async function run() {
         // get all the menus
         app.get("/allMenu", async (req, res) => {
             const category = req.query.category;
+            const foodOrigin = req.query.foodOrigin;
             // get filtered list
             let query = {};
             if (category !== "all") {
                 query.itemCategory = { $regex: category, $options: 'i' }
+            }
+            if (foodOrigin !== "all") {
+                query.foodOrigin = { $regex: foodOrigin, $options: 'i' }
             }
             const result = await allMenusCollection.find(query).sort({ _id: -1 }).toArray();
             res.send(result);
