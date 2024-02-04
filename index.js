@@ -35,6 +35,7 @@ async function run() {
         // get database and collection
         const allUsersCollection = client.db("caffeinaHaven").collection("allUsers");
         const allMenusCollection = client.db("caffeinaHaven").collection("allMenus");
+        const allMemoriesCollection = client.db("caffeinaHaven").collection("allSharedMemories");
 
 
         // post new created user data to database
@@ -61,6 +62,22 @@ async function run() {
         })
 
 
+        // post new memory
+        app.post("/postNewMemoryApi", async (req, res) => {
+            const newMemory = req.body;
+            const result = await allMemoriesCollection.insertOne(newMemory);
+            res.send(result);
+        })
+
+
+
+        // get all the memories by users
+        app.get("/getAllMemoriesApi", async (req, res) => {
+            const result = await allMemoriesCollection.find().sort({ _id: -1 }).toArray();
+            res.send(result);
+        })
+
+
 
         // get all the users
         app.get("/allUsers", async (req, res) => {
@@ -75,7 +92,7 @@ async function run() {
         // get all the menus
         app.get("/allMenu", async (req, res) => {
             const category = req.query.category;
-            const foodOrigin = req.query.foodOrigin;
+            const foodOrigin = req.query.foodOrigin.toLowerCase();
             // get filtered list
             let query = {};
             if (category !== "all") {
@@ -112,6 +129,16 @@ async function run() {
                 }
             }
             const result = await allUsersCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
+
+
+
+        // delete an item
+        app.delete("/deleteItemApi/:id", async (req, res) => {
+            const id = req.params;
+            const query = { _id: new ObjectId(id) };
+            const result = await allMenusCollection.deleteOne(query);
             res.send(result);
         })
 
