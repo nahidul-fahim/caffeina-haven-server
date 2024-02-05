@@ -134,6 +134,41 @@ async function run() {
 
 
 
+        // update post interaction info
+        app.put("/postInteractApi/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const newPostInteraction = req.body;
+            const updateDoc = { $set: {} }
+            if (newPostInteraction.pinnedStatus) {
+                updateDoc.$set.pinnedStatus = newPostInteraction.pinnedStatus
+            }
+            // update like or remove like status
+            if (newPostInteraction.likeUpdate) {
+                const currentPost = await allMemoriesCollection.findOne(filter);
+                if (newPostInteraction.likeUpdate === 'like') {
+                    let newLikeCount = (currentPost.likeCount || 0) + 1;
+                    updateDoc.$set.likeCount = newLikeCount;
+                    let currentPostLikedBy = currentPost.likedBy || [];
+                    currentPostLikedBy.unshift(newPostInteraction.likedPerson)
+                    updateDoc.$set.likedBy = currentPostLikedBy;
+                }
+                else {
+                    let newLikeCount = currentPost.likeCount - 1;
+                    updateDoc.$set.likeCount = newLikeCount;
+                    let currentPostLikedBy = currentPost.likedBy;
+                    let indexOfCurrentPerson = currentPostLikedBy.indexOf(newPostInteraction.likedPerson)
+                    currentPostLikedBy.splice(indexOfCurrentPerson, 1);
+                    updateDoc.$set.likedBy = currentPostLikedBy;
+                }
+            }
+            const result = await allMemoriesCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
+
+
+
         // delete an item
         app.delete("/deleteItemApi/:id", async (req, res) => {
             const id = req.params;
