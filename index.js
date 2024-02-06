@@ -36,6 +36,7 @@ async function run() {
         const allUsersCollection = client.db("caffeinaHaven").collection("allUsers");
         const allMenusCollection = client.db("caffeinaHaven").collection("allMenus");
         const allMemoriesCollection = client.db("caffeinaHaven").collection("allSharedMemories");
+        const allReservationCollection = client.db("caffeinaHaven").collection("allReservation");
 
 
         // post new created user data to database
@@ -66,6 +67,14 @@ async function run() {
         app.post("/postNewMemoryApi", async (req, res) => {
             const newMemory = req.body;
             const result = await allMemoriesCollection.insertOne(newMemory);
+            res.send(result);
+        })
+
+
+        // post new reservation
+        app.post("/reservationPostApi", async (req, res) => {
+            const newReservation = req.body;
+            const result = await allReservationCollection.insertOne(newReservation);
             res.send(result);
         })
 
@@ -140,13 +149,16 @@ async function run() {
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
             const newPostInteraction = req.body;
+            console.log(newPostInteraction)
             const updateDoc = { $set: {} }
             if (newPostInteraction.pinnedStatus) {
-                updateDoc.$set.pinnedStatus = newPostInteraction.pinnedStatus
+                updateDoc.$set.pinnedStatus = newPostInteraction.pinnedStatus;
             }
             // update like or remove like status
             if (newPostInteraction.likeUpdate) {
                 const currentPost = await allMemoriesCollection.findOne(filter);
+
+                // functionality for post like
                 if (newPostInteraction.likeUpdate === 'like') {
                     let newLikeCount = (currentPost.likeCount || 0) + 1;
                     updateDoc.$set.likeCount = newLikeCount;
@@ -154,16 +166,19 @@ async function run() {
                     currentPostLikedBy.unshift(newPostInteraction.likedPerson)
                     updateDoc.$set.likedBy = currentPostLikedBy;
                 }
+
+                // functionality for remove like
                 else {
                     let newLikeCount = currentPost.likeCount - 1;
                     updateDoc.$set.likeCount = newLikeCount;
                     let currentPostLikedBy = currentPost.likedBy;
-                    let indexOfCurrentPerson = currentPostLikedBy.indexOf(newPostInteraction.likedPerson)
+                    let indexOfCurrentPerson = currentPostLikedBy.indexOf(newPostInteraction.likedPerson);
                     currentPostLikedBy.splice(indexOfCurrentPerson, 1);
                     updateDoc.$set.likedBy = currentPostLikedBy;
                 }
             }
             const result = await allMemoriesCollection.updateOne(filter, updateDoc, options);
+            console.log(result);
             res.send(result);
         })
 
