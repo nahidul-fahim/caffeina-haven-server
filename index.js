@@ -88,11 +88,36 @@ async function run() {
 
 
 
+        // get the latest menus for homepage
+        app.get("/latestMenuForHomepageApi", async (req, res) => {
+            const result = (await allMenusCollection.find().sort({ _id: -1 }).toArray()).slice(0, 6);
+            res.send(result)
+        })
+
+
+
+
+        // get the latest stories
+        app.get("/latestStoriesForHomeApi", async (req, res) => {
+            const result = (await allMemoriesCollection.find().sort({ _id: -1 }).toArray()).slice(0, 8);
+            res.send(result)
+        })
+
+
+
         // get all the users
         app.get("/allUsers", async (req, res) => {
             const userType = "user";
             const query = { userType };
             const result = await allUsersCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
+
+        // get all the reservation
+        app.get("/getAllReservationApi", async (req, res) => {
+            const result = await allReservationCollection.find().toArray();
             res.send(result);
         })
 
@@ -149,7 +174,6 @@ async function run() {
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
             const newPostInteraction = req.body;
-            console.log(newPostInteraction)
             const updateDoc = { $set: {} }
             if (newPostInteraction.pinnedStatus) {
                 updateDoc.$set.pinnedStatus = newPostInteraction.pinnedStatus;
@@ -178,7 +202,6 @@ async function run() {
                 }
             }
             const result = await allMemoriesCollection.updateOne(filter, updateDoc, options);
-            console.log(result);
             res.send(result);
         })
 
