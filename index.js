@@ -37,6 +37,8 @@ async function run() {
         const allMenusCollection = client.db("caffeinaHaven").collection("allMenus");
         const allMemoriesCollection = client.db("caffeinaHaven").collection("allSharedMemories");
         const allReservationCollection = client.db("caffeinaHaven").collection("allReservation");
+        const allCartItemsCollection = client.db("caffeinaHaven").collection("allCartItems");
+        const allCouponsCollection = client.db("caffeinaHaven").collection("allCoupons");
 
 
         // post new created user data to database
@@ -71,10 +73,47 @@ async function run() {
         })
 
 
+
         // post new reservation
         app.post("/reservationPostApi", async (req, res) => {
             const newReservation = req.body;
             const result = await allReservationCollection.insertOne(newReservation);
+            res.send(result);
+        })
+
+
+
+        // post new cart Item to database
+        app.post("/newOrderApi", async (req, res) => {
+            const newOrderInfo = req.body;
+            const result = await allCartItemsCollection.insertOne(newOrderInfo);
+            res.send(result);
+        })
+
+
+
+        // post new coupon to database
+        app.post("/newCouponCreateApi", async (req, res) => {
+            const newCouponInfo = req.body;
+            const result = await allCouponsCollection.insertOne(newCouponInfo);
+            res.send(result);
+        })
+
+
+
+        // get all the coupons for admin
+        app.get("/getAllCouponAdminApi", async (req, res) => {
+            const result = await allCouponsCollection.find().toArray();
+            res.send(result);
+        })
+
+
+
+        // get cart Item for a user
+        app.get("/getAllCartItemsApi/:id", async (req, res) => {
+            const userEmail = req.params.id;
+            const query = { buyerEmail: userEmail };
+            const result = await allCartItemsCollection.find(query).toArray();
             res.send(result);
         })
 
@@ -93,7 +132,6 @@ async function run() {
             const result = (await allMenusCollection.find().sort({ _id: -1 }).toArray()).slice(0, 6);
             res.send(result)
         })
-
 
 
 
@@ -207,11 +245,21 @@ async function run() {
 
 
 
-        // delete an item
+        // delete an item from menu
         app.delete("/deleteItemApi/:id", async (req, res) => {
             const id = req.params;
             const query = { _id: new ObjectId(id) };
             const result = await allMenusCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+        // delete a coupon
+        app.delete("/deleteCouponApi/:id", async (req, res) => {
+            const couponId = req.params.id;
+            const query = { _id: new ObjectId(couponId) };
+            const result = await allCouponsCollection.deleteOne(query);
             res.send(result);
         })
 
