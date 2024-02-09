@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
@@ -39,6 +40,50 @@ async function run() {
         const allReservationCollection = client.db("caffeinaHaven").collection("allReservation");
         const allCartItemsCollection = client.db("caffeinaHaven").collection("allCartItems");
         const allCouponsCollection = client.db("caffeinaHaven").collection("allCoupons");
+
+
+
+        // json related api
+        app.post("/jwt", async (req, res) => {
+            const user = req.body;
+            const token = await jwt.sign(user, process.env.ACCESS_WEB_TOKEN, { expiresIn: '1h' });
+            res.send({ token });
+        })
+
+
+
+        // verify token middleware
+        const verifyToken = (req, res, next) => {
+            const tokenAuthorization = req.headers.authorization;
+            if (!tokenAuthorization) {
+                return res.status(401).send({ message: 'Unauthorized' })
+            }
+            const token = tokenAuthorization.split(' ')[1]
+            // verify token
+            jwt.verify(token, process.env.ACCESS_WEB_TOKEN, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'Unauthorized' })
+                }
+                req.decoded = decoded;
+                next();
+            })
+        }
+
+
+
+        // verify admin middleware
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { userEmail: email };
+            const user = await allUsersCollection.findOne(query);
+            const isAdmin = user?.userType === 'admin';
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'Forbidden Access!' })
+            }
+            next();
+        }
+
+
 
 
         // post new created user data to database
@@ -264,6 +309,16 @@ async function run() {
             const id = req.params;
             const query = { _id: new ObjectId(id) };
             const result = await allMenusCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+        // delete an item from cart
+        app.delete("/deleteItemFromCartApi/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await allCartItemsCollection.deleteOne(query);
             res.send(result);
         })
 
