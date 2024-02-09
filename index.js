@@ -85,6 +85,22 @@ async function run() {
 
 
 
+        // verify if user is admin
+        app.get("/verifyAdminApi/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { userEmail: email };
+            const user = await allUsersCollection.findOne(query);
+            if (user?.userType === "admin") {
+                admin = true;
+                res.send({ admin })
+            }
+            else {
+                res.send({ admin: false })
+            }
+        })
+
+
+
 
         // post new created user data to database
         app.post("/createNewUser", async (req, res) => {
@@ -103,7 +119,7 @@ async function run() {
 
 
         // post new item to database
-        app.post("/addNewItem", async (req, res) => {
+        app.post("/addNewItem", verifyToken, verifyAdmin, async (req, res) => {
             const newItemInfo = req.body;
             const result = await allMenusCollection.insertOne(newItemInfo);
             res.send(result);
@@ -111,7 +127,7 @@ async function run() {
 
 
         // post new memory
-        app.post("/postNewMemoryApi", async (req, res) => {
+        app.post("/postNewMemoryApi", verifyToken, async (req, res) => {
             const newMemory = req.body;
             const result = await allMemoriesCollection.insertOne(newMemory);
             res.send(result);
@@ -129,7 +145,7 @@ async function run() {
 
 
         // post new cart Item to database
-        app.post("/newOrderApi", async (req, res) => {
+        app.post("/newOrderApi", verifyToken, async (req, res) => {
             const newOrderInfo = req.body;
             const result = await allCartItemsCollection.insertOne(newOrderInfo);
             res.send(result);
@@ -138,7 +154,7 @@ async function run() {
 
 
         // post new coupon to database
-        app.post("/newCouponCreateApi", async (req, res) => {
+        app.post("/newCouponCreateApi", verifyToken, verifyAdmin, async (req, res) => {
             const newCouponInfo = req.body;
             const result = await allCouponsCollection.insertOne(newCouponInfo);
             res.send(result);
@@ -147,7 +163,7 @@ async function run() {
 
 
         // coupon code validation
-        app.post("/couponCodeValidationApi", async (req, res) => {
+        app.post("/couponCodeValidationApi", verifyToken, async (req, res) => {
             const appliedCouponCode = req.body.couponCode;
             const query = { couponName: appliedCouponCode };
             const result = await allCouponsCollection.findOne(query);
@@ -161,7 +177,7 @@ async function run() {
 
 
         // get all the coupons for admin
-        app.get("/getAllCouponAdminApi", async (req, res) => {
+        app.get("/getAllCouponAdminApi", verifyToken, verifyAdmin, async (req, res) => {
             const result = await allCouponsCollection.find().toArray();
             res.send(result);
         })
@@ -169,7 +185,7 @@ async function run() {
 
 
         // get cart Item for a user
-        app.get("/getAllCartItemsApi/:id", async (req, res) => {
+        app.get("/getAllCartItemsApi/:id", verifyToken, async (req, res) => {
             const userEmail = req.params.id;
             const query = { buyerEmail: userEmail };
             const result = await allCartItemsCollection.find(query).toArray();
@@ -203,7 +219,7 @@ async function run() {
 
 
         // get all the users
-        app.get("/allUsers", async (req, res) => {
+        app.get("/allUsers", verifyToken, verifyAdmin, async (req, res) => {
             const userType = "user";
             const query = { userType };
             const result = await allUsersCollection.find(query).toArray();
@@ -213,7 +229,7 @@ async function run() {
 
 
         // get all the reservation
-        app.get("/getAllReservationApi", async (req, res) => {
+        app.get("/getAllReservationApi", verifyToken, verifyAdmin, async (req, res) => {
             const result = await allReservationCollection.find().toArray();
             res.send(result);
         })
@@ -239,7 +255,7 @@ async function run() {
 
 
         // get current user data
-        app.get("/currentUser/:id", async (req, res) => {
+        app.get("/currentUser/:id", verifyToken, async (req, res) => {
             const email = req.params.id;
             const query = { userEmail: email };
             const result = await allUsersCollection.findOne(query);
@@ -248,8 +264,8 @@ async function run() {
 
 
 
-        // update user status
-        app.put("/updateUser/:id", async (req, res) => {
+        // update user status by admin
+        app.put("/updateUser/:id", verifyToken, verifyAdmin, async (req, res) => {
             const userId = req.params.id;
             const filter = { _id: new ObjectId(userId) };
             const options = { upsert: true };
@@ -305,7 +321,7 @@ async function run() {
 
 
         // delete an item from menu
-        app.delete("/deleteItemApi/:id", async (req, res) => {
+        app.delete("/deleteItemApi/:id", verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params;
             const query = { _id: new ObjectId(id) };
             const result = await allMenusCollection.deleteOne(query);
@@ -315,7 +331,7 @@ async function run() {
 
 
         // delete an item from cart
-        app.delete("/deleteItemFromCartApi/:id", async (req, res) => {
+        app.delete("/deleteItemFromCartApi/:id", verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await allCartItemsCollection.deleteOne(query);
@@ -325,16 +341,12 @@ async function run() {
 
 
         // delete a coupon
-        app.delete("/deleteCouponApi/:id", async (req, res) => {
+        app.delete("/deleteCouponApi/:id", verifyToken, verifyAdmin, async (req, res) => {
             const couponId = req.params.id;
             const query = { _id: new ObjectId(couponId) };
             const result = await allCouponsCollection.deleteOne(query);
             res.send(result);
         })
-
-
-
-
 
 
 
