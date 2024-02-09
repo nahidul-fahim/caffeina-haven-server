@@ -101,6 +101,20 @@ async function run() {
 
 
 
+        // coupon code validation
+        app.post("/couponCodeValidationApi", async (req, res) => {
+            const appliedCouponCode = req.body.couponCode;
+            const query = { couponName: appliedCouponCode };
+            const result = await allCouponsCollection.findOne(query);
+            if (!result) {
+                return res.send({ coupon: false });
+            }
+            const discountPercentage = result.discountPercentage;
+            res.send({ coupon: true, discountPercentage });
+        })
+
+
+
         // get all the coupons for admin
         app.get("/getAllCouponAdminApi", async (req, res) => {
             const result = await allCouponsCollection.find().toArray();
