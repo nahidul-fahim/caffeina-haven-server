@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
@@ -46,7 +47,7 @@ async function run() {
         // json related api
         app.post("/jwt", async (req, res) => {
             const user = req.body;
-            const token = await jwt.sign(user, process.env.ACCESS_WEB_TOKEN, { expiresIn: '1h' });
+            const token = jwt.sign(user, process.env.ACCESS_WEB_TOKEN, { expiresIn: '1h' });
             res.send({ token });
         })
 
@@ -56,12 +57,15 @@ async function run() {
         const verifyToken = (req, res, next) => {
             const tokenAuthorization = req.headers.authorization;
             if (!tokenAuthorization) {
+                console.log("error from first 401")
                 return res.status(401).send({ message: 'Unauthorized' })
             }
             const token = tokenAuthorization.split(' ')[1]
             // verify token
             jwt.verify(token, process.env.ACCESS_WEB_TOKEN, (err, decoded) => {
                 if (err) {
+                    console.log(err)
+                    console.log("error from second 401")
                     return res.status(401).send({ message: 'Unauthorized' })
                 }
                 req.decoded = decoded;
@@ -90,13 +94,33 @@ async function run() {
             const email = req.params.email;
             const query = { userEmail: email };
             const user = await allUsersCollection.findOne(query);
+            console.log(user)
             if (user?.userType === "admin") {
+                console.log(user?.userType)
                 admin = true;
                 res.send({ admin })
             }
             else {
+                console.log("admin false option")
                 res.send({ admin: false })
             }
+        })
+
+
+
+        // create payment intent
+        app.post("/create-payment-intent", async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100);
+            // payment intent
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            });
         })
 
 
@@ -185,7 +209,7 @@ async function run() {
 
 
         // get cart Item for a user
-        app.get("/getAllCartItemsApi/:id", verifyToken, async (req, res) => {
+        app.get("/getAllCartItemsApi/:id", async (req, res) => {
             const userEmail = req.params.id;
             const query = { buyerEmail: userEmail };
             const result = await allCartItemsCollection.find(query).toArray();
@@ -255,7 +279,7 @@ async function run() {
 
 
         // get current user data
-        app.get("/currentUser/:id", verifyToken, async (req, res) => {
+        app.get("/currentUser/:id", async (req, res) => {
             const email = req.params.id;
             const query = { userEmail: email };
             const result = await allUsersCollection.findOne(query);
