@@ -110,8 +110,11 @@ async function run() {
 
         // create payment intent
         app.post("/create-payment-intent", async (req, res) => {
-            const { price } = req.body;
-            const amount = parseInt(price * 100);
+            const { finalAmount } = req.body;
+            console.log(finalAmount)
+            const discountedAmount = 50;
+            const amount = parseInt(discountedAmount * 100);
+            console.log(typeof amount)
             // payment intent
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
@@ -284,6 +287,16 @@ async function run() {
             const query = { userEmail: email };
             const result = await allUsersCollection.findOne(query);
             res.send(result);
+        })
+
+
+        // get admin statistics
+        app.get("/adminStatisticsPageInfoApi", verifyToken, verifyAdmin, async (req, res) => {
+            const query = { userType: 'user' };
+            const totalUsers = (await allUsersCollection.find(query).toArray()).length;
+            const totalReservation = (await allReservationCollection.find().toArray()).length;
+            const totalMemories = (await allMemoriesCollection.find().toArray()).length;
+            res.send({ totalUsers, totalReservation, totalMemories })
         })
 
 
