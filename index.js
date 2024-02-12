@@ -57,15 +57,12 @@ async function run() {
         const verifyToken = (req, res, next) => {
             const tokenAuthorization = req.headers.authorization;
             if (!tokenAuthorization) {
-                console.log("error from first 401")
                 return res.status(401).send({ message: 'Unauthorized' })
             }
             const token = tokenAuthorization.split(' ')[1]
             // verify token
             jwt.verify(token, process.env.ACCESS_WEB_TOKEN, (err, decoded) => {
                 if (err) {
-                    console.log(err)
-                    console.log("error from second 401")
                     return res.status(401).send({ message: 'Unauthorized' })
                 }
                 req.decoded = decoded;
@@ -94,14 +91,11 @@ async function run() {
             const email = req.params.email;
             const query = { userEmail: email };
             const user = await allUsersCollection.findOne(query);
-            console.log(user)
             if (user?.userType === "admin") {
-                console.log(user?.userType)
                 admin = true;
                 res.send({ admin })
             }
             else {
-                console.log("admin false option")
                 res.send({ admin: false })
             }
         })
@@ -111,15 +105,12 @@ async function run() {
         // create payment intent
         app.post("/create-payment-intent", async (req, res) => {
             const { finalAmount } = req.body;
-            console.log(finalAmount)
-            const discountedAmount = 50;
-            const amount = parseInt(discountedAmount * 100);
-            console.log(typeof amount)
+            const amount = parseInt(finalAmount * 100);
             // payment intent
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
                 currency: "usd",
-                payment_method_types: ["card"]
+                payment_method_types: ["card"],
             });
             res.send({
                 clientSecret: paymentIntent.client_secret
@@ -372,6 +363,19 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await allCartItemsCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+        // delete all cart items after successful payment
+        app.post("/deleteCartItemsAfterPaymentApi", verifyToken, async (req, res) => {
+            const cartIds = req.body;
+            const query = {
+                _id: {
+                    $in: cartIds.allItemIds.map(id => new ObjectId(id))
+                }
+            };
+            const result = await allCartItemsCollection.deleteMany(query);
             res.send(result);
         })
 
