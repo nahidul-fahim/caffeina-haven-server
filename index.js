@@ -75,7 +75,7 @@ async function run() {
         // verify admin middleware
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
-            const query = { userEmail: email };
+            const query = { email: email };
             const user = await allUsersCollection.findOne(query);
             const isAdmin = user?.userType === 'admin';
             if (!isAdmin) {
@@ -89,7 +89,7 @@ async function run() {
         // verify if user is admin
         app.get("/verifyAdminApi/:email", async (req, res) => {
             const email = req.params.email;
-            const query = { userEmail: email };
+            const query = { email: email };
             const user = await allUsersCollection.findOne(query);
             if (user?.userType === "admin") {
                 admin = true;
@@ -123,7 +123,7 @@ async function run() {
         // post new created user data to database
         app.post("/createNewUser", async (req, res) => {
             const newUserInfo = req.body;
-            const query = { email: newUserInfo?.userEmail }
+            const query = { email: newUserInfo?.email }
             const existingUser = await allUsersCollection.findOne(query);
             if (existingUser) {
                 return res.send({ message: "User already exists", insertedId: null })
@@ -275,7 +275,7 @@ async function run() {
         // get current user data
         app.get("/currentUser/:id", async (req, res) => {
             const email = req.params.id;
-            const query = { userEmail: email };
+            const query = { email: email };
             const result = await allUsersCollection.findOne(query);
             res.send(result);
         })
@@ -388,12 +388,6 @@ async function run() {
             const result = await allCouponsCollection.deleteOne(query);
             res.send(result);
         })
-
-
-
-
-
-
 
 
         // Send a ping to confirm a successful connection
